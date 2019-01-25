@@ -1,11 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
+	"os/user"
+	"time"
 
 	"github.com/urfave/cli"
 )
@@ -102,6 +107,100 @@ type MsgMarkdown struct {
 	Content string `json:"content"`
 }
 
+// AccessToken auth api
+type AccessToken struct {
+	ErrCode   int    `json:"errcode,omitempty"`
+	ErrMsg    string `json:"errmsg,omitempty"`
+	Token     string `json:"access_token,omitempty"`
+	ExpiresIn int32  `json:"expires_in,omitempty"`
+	ExpiresAt int32  `json:"expires_at,omitempty"`
+}
+
+var client = &http.Client{Timeout: 10 * time.Second}
+
+func accessToken(config Config) (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+	cachePath := usr.HomeDir + "/.notify"
+	expired := false
+	if _, err := os.Stat(cachePath); !os.IsNotExist(err) {
+		cacheFile, err := os.Open(cachePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer cacheFile.Close()
+
+		cacheByte, _ := ioutil.ReadAll(cacheFile)
+		var accessToken AccessToken
+		json.Unmarshal(cacheByte, &accessToken)
+		if accessToken.ExpiresAt > int32(time.Now().Unix()) {
+			return accessToken.Token, nil
+		}
+		expired = true
+	}
+
+	if _, err := os.Stat(cachePath); expired || os.IsNotExist(err) {
+		res, err := client.Get(fmt.Sprintf("https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=%s&corpsecret=%s", config.CorpID, config.CorpSecret))
+		if err != nil {
+			return "", err
+		}
+		defer res.Body.Close()
+
+		accessToken := AccessToken{}
+		json.NewDecoder(res.Body).Decode(&accessToken)
+
+		if accessToken.ErrMsg != "ok" {
+			panic(accessToken.ErrMsg)
+		} else {
+			accessToken.ExpiresAt = int32(time.Now().Unix()) + accessToken.ExpiresIn
+			accessTokenJSON, _ := json.Marshal(accessToken)
+
+			cacheFile, err := os.Create(cachePath)
+			if err != nil {
+				log.Fatal(err)
+			}
+			cacheFile.Write(accessTokenJSON)
+			cacheFile.Sync()
+
+			return accessToken.Token, nil
+		}
+	}
+
+	return "", err
+}
+
+func readJSON(path string, target interface{}) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	fileByte, err := ioutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(fileByte, &target)
+}
+
+func sendMessage(config Config, message Message) {
+	message.AgentID = config.AgentID
+
+	accessToken, err := accessToken(config)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	body := new(bytes.Buffer)
+	json.NewEncoder(body).Encode(message)
+
+	req, _ := http.NewRequest("POST", fmt.Sprintf("https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=%s", accessToken), body)
+	res, _ := client.Do(req)
+	io.Copy(os.Stdout, res.Body)
+}
+
 func main() {
 	cli.AppHelpTemplate = `NAME:
 	{{.Name}} - {{.Usage}}
@@ -130,22 +229,17 @@ USAGE:
 			return nil
 		}
 
-		configFile, err := os.Open(c.GlobalString("config"))
-		if err != nil {
-			return nil
-		}
-		defer configFile.Close()
-
-		configByte, _ := ioutil.ReadAll(configFile)
 		var config Config
-		json.Unmarshal(configByte, &config)
+		if readJSON(c.GlobalString("config"), &config) != nil {
+			log.Fatal("fail to parse " + c.GlobalString("config"))
+		}
 
-		message := Message{}
-		message.AgentID = config.AgentID
-		msgJSON, _ := json.Marshal(message)
+		var message Message
+		if readJSON(c.GlobalString("message"), &message) != nil {
+			log.Fatal("fail to parse " + c.GlobalString("message"))
+		}
 
-		fmt.Println(string(msgJSON))
-
+		sendMessage(config, message)
 		return nil
 	}
 
