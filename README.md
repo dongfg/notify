@@ -5,14 +5,20 @@ install govendor first `https_proxy=http://127.0.0.1:1087 go get -u github.com/k
 govendor add +external
 ```
 
+### config format
+config.json
+```json
+
+```
+
 ### Test
 Example List:
 - [x] Text
-- [ ] Image
-- [ ] Voice
-- [ ] Video
-- [ ] File
-- [ ] TextCard
-- [ ] News
-- [ ] MpNews
-- [ ] Markdown
+- [x] Image
+- [x] Voice
+- [x] Video
+- [x] File
+- [x] TextCard
+- [x] News
+- [x] MpNews
+- [x] Markdown
