@@ -7,12 +7,12 @@ govendor add +external
 
 ### Test
 Example List:
-- [] Text
-- [] Image
-- [] Voice
-- [] Video
-- [] File
-- [] TextCard
-- [] News
-- [] MpNews
-- [] Markdown
+- [x] Text
+- [ ] Image
+- [ ] Voice
+- [ ] Video
+- [ ] File
+- [ ] TextCard
+- [ ] News
+- [ ] MpNews
+- [ ] Markdown
