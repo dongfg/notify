@@ -6,10 +6,7 @@ govendor add +external
 ```
 
 ### config format
-config.json
-```json
-
-```
+See [example](https://github.com/dongfg/notify/tree/master/example) folder
 
 ### Test
 Example List:
