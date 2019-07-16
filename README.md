@@ -6,12 +6,16 @@ govendor add +external
 ```
 
 ### config format
-config.json
 ```json
-
+{
+  "corpId": "YOUR CORP ID",
+  "corpSecret": "APP SECRET",
+  "agentId": APP AGENT ID
+}
 ```
 
 ### Test
+See [example](https://github.com/dongfg/notify/tree/master/example) folder
 Example List:
 - [x] Text
 - [x] Image
