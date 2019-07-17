@@ -1,11 +1,10 @@
-### Development
-install govendor first `https_proxy=http://127.0.0.1:1087 go get -u github.com/kardianos/govendor`
-```
-# Add existing GOPATH files to vendor.
-govendor add +external
-```
+企业微信应用消息发送
+============
+[![Go Report Card](https://goreportcard.com/badge/github.com/dongfg/notify)](https://goreportcard.com/report/github.com/dongfg/notify)
 
-### config format
+
+[官方API](https://work.weixin.qq.com/api/doc#90001/90143/90372)
+### Config format
 ```json
 {
   "corpId": "YOUR CORP ID",
@@ -14,7 +13,7 @@ govendor add +external
 }
 ```
 
-### Test
+### Message Example
 See [example](https://github.com/dongfg/notify/tree/master/example) folder
 Example List:
 - [x] Text
