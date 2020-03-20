@@ -35,16 +35,74 @@ type MessageOptions struct {
 	DuplicateCheckInterval int `json:"duplicate_check_interval"`
 }
 
-// TextMessage 文本消息
-type TextMessage struct {
+// Text 文本消息
+type Text struct {
 	// Content 消息内容，最长不超过2048个字节，超过将截断（支持id转译）
 	Content string `json:"content"`
 }
 
-// ImageMessage 图片消息
-type ImageMessage struct {
+// Image 图片消息
+type Image struct {
 	// 图片媒体文件id，可以调用上传临时素材接口获取
 	MediaID string `json:"media_id"`
+}
+
+// MsgVoice MsgType: "voice"
+type Voice struct {
+	MediaID string `json:"media_id"`
+}
+
+// MsgVideo MsgType: "video"
+type Video struct {
+	MediaID     string `json:"media_id"`
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
+// MsgFile MsgType: "file"
+type File struct {
+	MediaID string `json:"media_id"`
+}
+
+// MsgTextCard MsgType: "textcard"
+type TextCard struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	URL         string `json:"url"`
+	BtnTxt      string `json:"btntxt,omitempty"`
+}
+
+// MsgNews MsgType: "news"
+type News struct {
+	Articles []*NewsArticle `json:"articles"`
+}
+
+// NewsArticle MsgNews MsgType: "news"
+type NewsArticle struct {
+	Title       string `json:"title"`
+	Description string `json:"description,omitempty"`
+	URL         string `json:"url"`
+	PicURL      string `json:"picurl,omitempty"`
+}
+
+// MsgMpNews MsgType: "mpnews"
+type MpNews struct {
+	Articles []*MpNewsArticle `json:"articles"`
+}
+
+// MpNewsArticle MsgNews MsgType: "mpnews"
+type MpNewsArticle struct {
+	Title            string `json:"title"`
+	ThumbMediaID     string `json:"thumb_media_id"`
+	Author           string `json:"author,omitempty"`
+	ContentSourceURL string `json:"content_source_url,omitempty"`
+	Content          string `json:"content"`
+	Digest           string `json:"digest,omitempty"`
+}
+
+// MsgMarkdown MsgType: "markdown"
+type Markdown struct {
+	Content string `json:"content"`
 }
 
 // Notify reference to call send method
@@ -52,9 +110,6 @@ type Notify struct {
 	corpID    string
 	agentID   uint
 	appSecret string
-}
-
-type message struct {
 }
 
 // New 创建客户端， corpID 企业ID，在企业信息页面查看, agentID + appSecret 在应用页面查看
@@ -108,10 +163,10 @@ func (n *Notify) Send(receiver *MessageReceiver, message interface{}, options *M
 	}
 
 	switch v := message.(type) {
-	case TextMessage:
+	case Text:
 		msgBody["msgtype"] = "text"
 		msgBody["text"] = v
-	case ImageMessage:
+	case Image:
 		msgBody["msgtype"] = "image"
 		msgBody["image"] = v
 	default:
