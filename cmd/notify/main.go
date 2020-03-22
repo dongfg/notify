@@ -6,16 +6,13 @@ import (
 )
 
 func main() {
-	client := notify.New("11", 22, "33")
-	err := client.Send(&notify.MessageReceiver{
+	client := notify.New("ww0cb42f7ec6df90f7", 1000002, "eA-NzUtglvuyBIeJQjdJjwOBe29XbvI5XlO2FpSd9BA")
+	result, err := client.Send(&notify.MessageReceiver{
 		ToUser: "@all",
-	}, notify.TextMessage{Content: "I am content"}, &notify.MessageOptions{
-		Safe:                   true,
-		EnableIdTrans:          true,
-		EnableDuplicateCheck:   true,
-		DuplicateCheckInterval: 1400,
-	})
+	}, notify.Text{Content: "I am content"}, nil)
 	if err != nil {
 		fmt.Println(err)
+	} else {
+		fmt.Println(result)
 	}
 }
