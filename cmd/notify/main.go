@@ -42,6 +42,9 @@ func main() {
 				Before: func(c *cli.Context) error {
 					if c.Args().Len() == 2 {
 						err := c.Set("toUser", c.Args().Get(0))
+						if err != nil {
+							return err
+						}
 						err = c.Set("message", c.Args().Get(1))
 						return err
 					}
