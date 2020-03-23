@@ -174,77 +174,9 @@ func New(corpID string, agentID int64, appSecret string) *Notify {
 	}
 }
 
-func (n *Notify) getToken() error {
-	var client = &http.Client{Timeout: 10 * time.Second}
-
-	res, err := client.Get(fmt.Sprintf("%s/gettoken?corpid=%s&corpsecret=%s", apiPrefix, n.corpID, n.appSecret))
-	if err != nil {
-		return fmt.Errorf("token get request error: %w", err)
-	}
-	defer func() { _ = res.Body.Close() }()
-	var tokenRes getTokenResult
-	err = json.NewDecoder(res.Body).Decode(&tokenRes)
-	if err != nil {
-		return fmt.Errorf("token result decode error: %w", err)
-	}
-	if tokenRes.ErrorCode != 0 {
-		return fmt.Errorf("token get error: %s", tokenRes.ErrorMsg)
-	}
-	n.token = tokenRes.Token
-	n.tokenExpiresAt = time.Now().Unix() + tokenRes.ExpiresIn
-	return nil
-}
-
-func (n *Notify) sendMessage(msgBody map[string]interface{}) (MessageResult, error) {
-	var result MessageResult
-	var client = &http.Client{Timeout: 10 * time.Second}
-
-	body := new(bytes.Buffer)
-	err := json.NewEncoder(body).Encode(msgBody)
-	if err != nil {
-		return result, fmt.Errorf("encode message error: %w", err)
-	}
-	res, err := client.Post(fmt.Sprintf("%s/message/send?access_token=%s", apiPrefix, n.token), "application/json", body)
-	if err != nil {
-		return result, fmt.Errorf("send message request error: %w", err)
-	}
-	defer func() { _ = res.Body.Close() }()
-
-	err = json.NewDecoder(res.Body).Decode(&result)
-	if err != nil {
-		return result, fmt.Errorf("send message result decode error: %w", err)
-	}
-	return result, nil
-}
-
-func (n *Notify) sendInternal(msgBody map[string]interface{}) (MessageResult, error) {
-	var result MessageResult
-
-	if time.Now().Unix() > n.tokenExpiresAt {
-		err := n.getToken()
-		if err != nil {
-			return result, err
-		}
-	}
-
-	result, err := n.sendMessage(msgBody)
-	if err == nil && result.ErrorCode != 0 {
-		// TODO check if error if token expire error, then retry once
-		err = n.getToken()
-		if err == nil {
-			result, err = n.sendMessage(msgBody)
-		}
-	}
-
-	return result, err
-}
-
 // Send message with options to receiver, options can be nil
-func (n *Notify) Send(receiver *MessageReceiver, message interface{}, options *MessageOptions) (MessageResult, error) {
+func (n *Notify) Send(receiver MessageReceiver, message interface{}, options *MessageOptions) (MessageResult, error) {
 	var result MessageResult
-	if receiver == nil {
-		return result, errors.New("message receiver can not be nil")
-	}
 	if message == nil {
 		return result, errors.New("message can not be nil")
 	}
@@ -318,4 +250,69 @@ func (n *Notify) Send(receiver *MessageReceiver, message interface{}, options *M
 		return result, fmt.Errorf("unrecognized message type: %T", v)
 	}
 	return n.sendInternal(msgBody)
+}
+
+func (n *Notify) getToken() error {
+	var client = &http.Client{Timeout: 10 * time.Second}
+
+	res, err := client.Get(fmt.Sprintf("%s/gettoken?corpid=%s&corpsecret=%s", apiPrefix, n.corpID, n.appSecret))
+	if err != nil {
+		return fmt.Errorf("token get request error: %w", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+	var tokenRes getTokenResult
+	err = json.NewDecoder(res.Body).Decode(&tokenRes)
+	if err != nil {
+		return fmt.Errorf("token result decode error: %w", err)
+	}
+	if tokenRes.ErrorCode != 0 {
+		return fmt.Errorf("token get error: %s", tokenRes.ErrorMsg)
+	}
+	n.token = tokenRes.Token
+	n.tokenExpiresAt = time.Now().Unix() + tokenRes.ExpiresIn
+	return nil
+}
+
+func (n *Notify) sendMessage(msgBody map[string]interface{}) (MessageResult, error) {
+	var result MessageResult
+	var client = &http.Client{Timeout: 10 * time.Second}
+
+	body := new(bytes.Buffer)
+	err := json.NewEncoder(body).Encode(msgBody)
+	if err != nil {
+		return result, fmt.Errorf("encode message error: %w", err)
+	}
+	res, err := client.Post(fmt.Sprintf("%s/message/send?access_token=%s", apiPrefix, n.token), "application/json", body)
+	if err != nil {
+		return result, fmt.Errorf("send message request error: %w", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+
+	err = json.NewDecoder(res.Body).Decode(&result)
+	if err != nil {
+		return result, fmt.Errorf("send message result decode error: %w", err)
+	}
+	return result, nil
+}
+
+func (n *Notify) sendInternal(msgBody map[string]interface{}) (MessageResult, error) {
+	var result MessageResult
+
+	if time.Now().Unix() > n.tokenExpiresAt {
+		err := n.getToken()
+		if err != nil {
+			return result, err
+		}
+	}
+
+	result, err := n.sendMessage(msgBody)
+	if err == nil && result.ErrorCode != 0 {
+		// TODO check if error if token expire error, then retry once
+		err = n.getToken()
+		if err == nil {
+			result, err = n.sendMessage(msgBody)
+		}
+	}
+
+	return result, err
 }
