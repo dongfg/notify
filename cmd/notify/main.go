@@ -10,6 +10,7 @@ import (
 
 func main() {
 	app := &cli.App{
+		Version:              "v1.1.0",
 		Name:                 "notify",
 		HelpName:             "notify",
 		Usage:                "企业微信应用消息发送",
