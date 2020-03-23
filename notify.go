@@ -290,6 +290,9 @@ func (n *Notify) Send(receiver *MessageReceiver, message interface{}, options *M
 	case Voice:
 		msgBody["msgtype"] = "voice"
 		msgBody["voice"] = v
+	case Video:
+		msgBody["msgtype"] = "video"
+		msgBody["video"] = v
 	case File:
 		msgBody["msgtype"] = "file"
 		msgBody["file"] = v

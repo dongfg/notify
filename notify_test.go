@@ -57,6 +57,12 @@ func TestNotify_Send(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "Video",
+			args:    args{receiver: &MessageReceiver{ToUser: "@all"}, message: Video{MediaID: "23NH1YLqekQ3FPAXN_uxn9A39MItpX2SEgZ7xmaKGyCc-pnqvOM62eH7zVJHZ9Xz2"}, options: nil},
+			want:    MessageResult{ErrorCode: 0, ErrorMsg: "ok"},
+			wantErr: false,
+		},
+		{
 			name:    "File",
 			args:    args{receiver: &MessageReceiver{ToUser: "@all"}, message: File{MediaID: "2WZTACgAdDh2NpUAs0hcPt6tsXBN1lZ7X2JELMxMO4k7auzDOsbOAAl6SO5y4kyh7"}, options: nil},
 			want:    MessageResult{ErrorCode: 0, ErrorMsg: "ok"},
@@ -126,7 +132,7 @@ func TestNotify_Send(t *testing.T) {
 			args: args{receiver: &MessageReceiver{ToUser: "@all"}, message: TaskCard{
 				Title:       "赵明登的礼物申请",
 				Description: "礼品：A31茶具套装<br>用途：赠与小黑科技张总经理",
-				TaskID:      "unitTest_" + strconv.Itoa(rand.Intn(99999)),
+				TaskID:      "notify_" + strconv.Itoa(rand.Intn(99999)),
 				Buttons: []TaskCardButton{
 					{
 						Key:         "k1",
