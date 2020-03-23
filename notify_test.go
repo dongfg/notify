@@ -22,7 +22,7 @@ func newNotifyFromEnv() *Notify {
 
 func TestNotify_Send(t *testing.T) {
 	type args struct {
-		receiver *MessageReceiver
+		receiver MessageReceiver
 		message  interface{}
 		options  *MessageOptions
 	}
@@ -34,43 +34,43 @@ func TestNotify_Send(t *testing.T) {
 	}{
 		{
 			name:    "UnknownType",
-			args:    args{receiver: &MessageReceiver{ToUser: "@all"}, message: "Simple String", options: nil},
+			args:    args{receiver: MessageReceiver{ToUser: "@all"}, message: "Simple String", options: nil},
 			want:    MessageResult{},
 			wantErr: true,
 		},
 		{
 			name:    "Text",
-			args:    args{receiver: &MessageReceiver{ToUser: "@all"}, message: Text{Content: "TestNotify_Send_Text"}, options: nil},
+			args:    args{receiver: MessageReceiver{ToUser: "@all"}, message: Text{Content: "TestNotify_Send_Text"}, options: nil},
 			want:    MessageResult{ErrorCode: 0, ErrorMsg: "ok"},
 			wantErr: false,
 		},
 		{
 			name:    "Image",
-			args:    args{receiver: &MessageReceiver{ToUser: "@all"}, message: Image{MediaID: "2lUfpG6A6TxyH7WJbtArKH3N40q5dF9tmV6Ib2e2tvCutkqEKGxrmExSbwSmLzv2Q"}, options: nil},
+			args:    args{receiver: MessageReceiver{ToUser: "@all"}, message: Image{MediaID: "2lUfpG6A6TxyH7WJbtArKH3N40q5dF9tmV6Ib2e2tvCutkqEKGxrmExSbwSmLzv2Q"}, options: nil},
 			want:    MessageResult{ErrorCode: 0, ErrorMsg: "ok"},
 			wantErr: false,
 		},
 		{
 			name:    "Voice",
-			args:    args{receiver: &MessageReceiver{ToUser: "@all"}, message: Voice{MediaID: "2yazpc6Y-vSYmF24KP8N9b1jZ5nD9wnvkOR0amyZWn5o"}, options: nil},
+			args:    args{receiver: MessageReceiver{ToUser: "@all"}, message: Voice{MediaID: "2yazpc6Y-vSYmF24KP8N9b1jZ5nD9wnvkOR0amyZWn5o"}, options: nil},
 			want:    MessageResult{ErrorCode: 0, ErrorMsg: "ok"},
 			wantErr: false,
 		},
 		{
 			name:    "Video",
-			args:    args{receiver: &MessageReceiver{ToUser: "@all"}, message: Video{MediaID: "23NH1YLqekQ3FPAXN_uxn9A39MItpX2SEgZ7xmaKGyCc-pnqvOM62eH7zVJHZ9Xz2"}, options: nil},
+			args:    args{receiver: MessageReceiver{ToUser: "@all"}, message: Video{MediaID: "23NH1YLqekQ3FPAXN_uxn9A39MItpX2SEgZ7xmaKGyCc-pnqvOM62eH7zVJHZ9Xz2"}, options: nil},
 			want:    MessageResult{ErrorCode: 0, ErrorMsg: "ok"},
 			wantErr: false,
 		},
 		{
 			name:    "File",
-			args:    args{receiver: &MessageReceiver{ToUser: "@all"}, message: File{MediaID: "2WZTACgAdDh2NpUAs0hcPt6tsXBN1lZ7X2JELMxMO4k7auzDOsbOAAl6SO5y4kyh7"}, options: nil},
+			args:    args{receiver: MessageReceiver{ToUser: "@all"}, message: File{MediaID: "2WZTACgAdDh2NpUAs0hcPt6tsXBN1lZ7X2JELMxMO4k7auzDOsbOAAl6SO5y4kyh7"}, options: nil},
 			want:    MessageResult{ErrorCode: 0, ErrorMsg: "ok"},
 			wantErr: false,
 		},
 		{
 			name: "TextCard",
-			args: args{receiver: &MessageReceiver{ToUser: "@all"}, message: TextCard{
+			args: args{receiver: MessageReceiver{ToUser: "@all"}, message: TextCard{
 				Title:       "放假通知",
 				Description: "清明节放假通知",
 				URL:         "https://work.weixin.qq.com/",
@@ -80,7 +80,7 @@ func TestNotify_Send(t *testing.T) {
 		},
 		{
 			name: "News",
-			args: args{receiver: &MessageReceiver{ToUser: "@all"}, message: News{Articles: []NewsArticle{
+			args: args{receiver: MessageReceiver{ToUser: "@all"}, message: News{Articles: []NewsArticle{
 				{
 					Title:       "中秋节礼品领取",
 					Description: "今年中秋节公司有豪礼相送",
@@ -93,7 +93,7 @@ func TestNotify_Send(t *testing.T) {
 		},
 		{
 			name: "MpNews",
-			args: args{receiver: &MessageReceiver{ToUser: "@all"}, message: MpNews{Articles: []MpNewsArticle{
+			args: args{receiver: MessageReceiver{ToUser: "@all"}, message: MpNews{Articles: []MpNewsArticle{
 				{
 					Title:            "中秋节礼品领取",
 					ThumbMediaID:     "2lUfpG6A6TxyH7WJbtArKH3N40q5dF9tmV6Ib2e2tvCutkqEKGxrmExSbwSmLzv2Q",
@@ -108,7 +108,7 @@ func TestNotify_Send(t *testing.T) {
 		},
 		{
 			name: "Markdown",
-			args: args{receiver: &MessageReceiver{ToUser: "@all"}, message: Markdown{Content: `
+			args: args{receiver: MessageReceiver{ToUser: "@all"}, message: Markdown{Content: `
 您的会议室已经预定，稍后会同步到 *邮箱*
 >**事项详情**
 >事　项：<font color=\"info\">开会</font>
@@ -129,7 +129,7 @@ func TestNotify_Send(t *testing.T) {
 
 		{
 			name: "TaskCard",
-			args: args{receiver: &MessageReceiver{ToUser: "@all"}, message: TaskCard{
+			args: args{receiver: MessageReceiver{ToUser: "@all"}, message: TaskCard{
 				Title:       "赵明登的礼物申请",
 				Description: "礼品：A31茶具套装<br>用途：赠与小黑科技张总经理",
 				TaskID:      "notify_" + strconv.Itoa(rand.Intn(99999)),
