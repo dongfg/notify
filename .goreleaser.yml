@@ -1,7 +1,7 @@
 builds:
-  -
-    env:
+  - env:
       - CGO_ENABLED=0
+    main: ./cmd/notify
     goos:
       - darwin
       - linux
@@ -25,5 +25,5 @@ changelog:
   sort: asc
   filters:
     exclude:
-    - '^docs:'
-    - '^test:'
+      - '^docs:'
+      - '^test:'
