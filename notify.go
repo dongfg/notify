@@ -28,7 +28,7 @@ type MessageReceiver struct {
 // MessageOptions 消息配置包括加密、id转译、重复检查等。部分消息类型只支持部分配置详见官方文档
 type MessageOptions struct {
 	Safe                   bool `json:"safe"`                     // 表示是否是保密消息，默认否
-	EnableIdTrans          bool `json:"enable_id_trans"`          // 表示是否开启id转译，默认否
+	EnableIDTrans          bool `json:"enable_id_trans"`          // 表示是否开启id转译，默认否
 	EnableDuplicateCheck   bool `json:"enable_duplicate_check"`   // 表示是否开启重复消息检查，默认否
 	DuplicateCheckInterval int  `json:"duplicate_check_interval"` // 表示是否重复消息检查的时间间隔，默认1800s，最大不超过4小时
 }
@@ -76,12 +76,12 @@ type TextCard struct {
 	Title       string `json:"title"`            // 标题，不超过128个字节，超过会自动截断（支持id转译）
 	Description string `json:"description"`      // 描述，不超过512个字节，超过会自动截断（支持id转译）
 	URL         string `json:"url"`              // 点击后跳转的链接
-	BtnTxt      string `json:"btntxt,omitempty"` // 按钮文字。 默认为“详情”， 不超过4个文字，超过自动截断
+	BtnTxt      string `json:"btntxt,omitempty"` // 非必填。按钮文字。 默认为“详情”， 不超过4个文字，超过自动截断
 }
 
 // News 图文消息
 type News struct {
-	Articles []*NewsArticle `json:"articles"` // 图文消息，一个图文消息支持1到8条图文
+	Articles []NewsArticle `json:"articles"` // 图文消息，一个图文消息支持1到8条图文
 }
 
 // NewsArticle 图文消息详情
@@ -95,7 +95,7 @@ type NewsArticle struct {
 // MpNews 图文消息（mpnews）。mpnews类型的图文消息，跟普通的图文消息一致，唯一的差异是图文内容存储在企业微信。
 // 多次发送mpnews，会被认为是不同的图文，阅读、点赞的统计会被分开计算。
 type MpNews struct {
-	Articles []*MpNewsArticle `json:"articles"` // 图文消息，一个图文消息支持1到8条图文
+	Articles []MpNewsArticle `json:"articles"` // 图文消息，一个图文消息支持1到8条图文
 }
 
 // MpNewsArticle 图文消息详情详情
@@ -137,7 +137,7 @@ type TaskCard struct {
 	Title       string           `json:"title"`         // 标题，不超过128个字节，超过会自动截断（支持id转译）
 	Description string           `json:"description"`   // 描述，不超过512个字节，超过会自动截断（支持id转译）
 	URL         string           `json:"url,omitempty"` // 非必填。点击后跳转的链接。最长2048字节，请确保包含了协议头(http/https)
-	TaskID      string           `json:"taskId"`        // 任务id，同一个应用发送的任务卡片消息的任务id不能重复，只能由数字、字母和“_-@.”组成，最长支持128字节
+	TaskID      string           `json:"task_id"`       // 任务id，同一个应用发送的任务卡片消息的任务id不能重复，只能由数字、字母和“_-@.”组成，最长支持128字节
 	Buttons     []TaskCardButton `json:"btn"`           // 按钮列表，按钮个数为为1~2个
 }
 
@@ -174,10 +174,10 @@ func New(corpID string, agentID int64, appSecret string) *Notify {
 	}
 }
 
-func (n *Notify) getToken(corpID string, appSecret string) error {
+func (n *Notify) getToken() error {
 	var client = &http.Client{Timeout: 10 * time.Second}
 
-	res, err := client.Get(fmt.Sprintf("%s/gettoken?corpid=%s&corpsecret=%s", apiPrefix, corpID, appSecret))
+	res, err := client.Get(fmt.Sprintf("%s/gettoken?corpid=%s&corpsecret=%s", apiPrefix, n.corpID, n.appSecret))
 	if err != nil {
 		return fmt.Errorf("token get request error: %w", err)
 	}
@@ -221,7 +221,7 @@ func (n *Notify) sendInternal(msgBody map[string]interface{}) (MessageResult, er
 	var result MessageResult
 
 	if time.Now().Unix() > n.tokenExpiresAt {
-		err := n.getToken(n.corpID, n.appSecret)
+		err := n.getToken()
 		if err != nil {
 			return result, err
 		}
@@ -230,7 +230,7 @@ func (n *Notify) sendInternal(msgBody map[string]interface{}) (MessageResult, er
 	result, err := n.sendMessage(msgBody)
 	if err == nil && result.ErrorCode != 0 {
 		// TODO check if error if token expire error, then retry once
-		err = n.getToken(n.corpID, n.appSecret)
+		err = n.getToken()
 		if err == nil {
 			result, err = n.sendMessage(msgBody)
 		}
@@ -269,7 +269,7 @@ func (n *Notify) Send(receiver *MessageReceiver, message interface{}, options *M
 		if options.Safe {
 			msgBody["safe"] = 1
 		}
-		if options.EnableIdTrans {
+		if options.EnableIDTrans {
 			msgBody["enable_id_trans"] = 1
 		}
 		if options.EnableDuplicateCheck {
@@ -304,7 +304,7 @@ func (n *Notify) Send(receiver *MessageReceiver, message interface{}, options *M
 		msgBody["mpnews"] = v
 	case Markdown:
 		msgBody["msgtype"] = "markdown"
-		msgBody["mpnews"] = v
+		msgBody["markdown"] = v
 	case MiniProgram:
 		msgBody["msgtype"] = "miniprogram_notice"
 		msgBody["miniprogram_notice"] = v
