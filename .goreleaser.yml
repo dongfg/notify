@@ -1,7 +1,7 @@
 builds:
   - env:
       - CGO_ENABLED=0
-    main: ./cmd/notify
+    main: ./notify
     goos:
       - darwin
       - linux
