@@ -10,13 +10,30 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 )
 
 const (
 	apiPrefix = "https://qyapi.weixin.qq.com/cgi-bin"
 )
+
+type UploadMedia struct {
+	Type string
+	Path string
+}
+
+type UploadMediaResult struct {
+	ErrorCode int64  `json:"errcode"` // 错误码，0为全部成功
+	ErrorMsg  string `json:"errmsg"`
+	Type      string `json:"type"`
+	MediaID   string `json:"media_id"`
+	CreatedAt string `json:"created_at"`
+}
 
 // MessageReceiver 消息接收者 ToUser、ToParty、ToTag 至少一个
 type MessageReceiver struct {
@@ -250,6 +267,48 @@ func (n *Notify) Send(receiver MessageReceiver, message interface{}, options *Me
 		return result, fmt.Errorf("unrecognized message type: %T", v)
 	}
 	return n.sendInternal(msgBody)
+}
+
+// Upload temp media to server
+func (n *Notify) Upload(media UploadMedia) (UploadMediaResult, error) {
+	var result UploadMediaResult
+	var client = &http.Client{Timeout: 10 * time.Second}
+
+	// read media file
+	f, err := os.Open(media.Path)
+	if err != nil {
+		return result, fmt.Errorf("open media file error: %w", err)
+	}
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	fw, err := w.CreateFormFile("media", filepath.Base(media.Path))
+	if err != nil {
+		return result, fmt.Errorf("create multipart file error: %w", err)
+	}
+	_, err = io.Copy(fw, f)
+	if err != nil {
+		return result, fmt.Errorf("read media file error: %w", err)
+	}
+	_ = w.Close()
+	// get token
+	if time.Now().Unix() > n.tokenExpiresAt {
+		err := n.getToken()
+		if err != nil {
+			return result, err
+		}
+	}
+	// send request
+	res, err := client.Post(fmt.Sprintf("%s/media/upload?access_token=%s&type=%s", apiPrefix, n.token, media.Type), w.FormDataContentType(), &b)
+	if err != nil {
+		return result, fmt.Errorf("upload media file error: %w", err)
+	}
+	defer func() { _ = res.Body.Close() }()
+
+	err = json.NewDecoder(res.Body).Decode(&result)
+	if err != nil {
+		return result, fmt.Errorf("upload media result decode error: %w", err)
+	}
+	return result, nil
 }
 
 func (n *Notify) getToken() error {

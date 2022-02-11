@@ -1,6 +1,7 @@
 package notify
 
 import (
+	"fmt"
 	"math/rand"
 	"os"
 	"reflect"
@@ -173,6 +174,20 @@ func TestNotify_getToken(t *testing.T) {
 		err := n.getToken()
 		if err != nil {
 			t.Errorf("getToken() error = %v, want no error", err)
+		}
+	})
+}
+
+func TestNotify_Upload(t *testing.T) {
+	n := newNotifyFromEnv()
+	t.Run("Upload", func(t *testing.T) {
+		r, err := n.Upload(UploadMedia{
+			Type: "file",
+			Path: "./CHANGELOG",
+		})
+		fmt.Println(r)
+		if err != nil {
+			t.Errorf("Upload() error = %v, want no error", err)
 		}
 	})
 }
