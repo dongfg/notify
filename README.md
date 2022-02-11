@@ -72,8 +72,21 @@ OPTIONS:
 - [x] TaskCard: 仅支持在企业微信查看
 - [ ] MiniProgram: 未测试
 
+## 命令行支持情况
+- [x] Text
+- [x] Image
+- [x] Voice
+- [x] Video
+- [x] File
+- [x] TextCard 
+- [x] News
+- [ ] MpNews
+- [x] Markdown
+- [ ] TaskCard
+- [ ] MiniProgram
+
 ## Todo-List
 - [ ] token 异常过期处理
-- [ ] 命令行发送其他类型消息
+- [x] 命令行发送其他类型消息
 - [ ] 命令行 token 缓存
-- [ ] 命令行 completion
+- [x] 命令行 completion
