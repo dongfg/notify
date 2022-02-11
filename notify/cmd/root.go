@@ -94,8 +94,9 @@ func initConfig() {
 		home, err := os.UserHomeDir()
 		cobra.CheckErr(err)
 
-		// Search config in home directory with name ".cobra" (without extension).
+		// Search config in home directory with name ".notify" (without extension).
 		viper.AddConfigPath(home)
+		viper.AddConfigPath(".")
 		viper.SetConfigType("yaml")
 		viper.SetConfigName(".notify")
 	}
@@ -107,6 +108,8 @@ func initConfig() {
 			_, _ = fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
 		}
 		postInitCommands(rootCmd.Commands())
+	} else {
+		cobra.CheckErr(err)
 	}
 }
 
