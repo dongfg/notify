@@ -154,7 +154,7 @@ notify textcard --title 恭喜你中奖了 --description 明天不用上班 --ur
 
 ## Todo-List
 
-- [ ] token 异常过期处理
+- [x] token 异常过期处理
 - [x] 命令行发送其他类型消息
 - [ ] 命令行 token 缓存
 - [x] 命令行 completion

@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/dongfg/notify"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"os"
 )
 
 //  cfgFile global config file path
@@ -27,6 +28,7 @@ var rootCmd = &cobra.Command{
 	Long:  `企业微信应用消息发送`,
 	PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 		client = notify.New(corpID, agentID, appSecret)
+		client.EnableTokenPersist()
 		receiver = notify.MessageReceiver{
 			ToUser:  viper.GetString("user"),
 			ToParty: viper.GetString("party"),
