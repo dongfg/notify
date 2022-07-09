@@ -2,6 +2,8 @@ builds:
   - env:
       - CGO_ENABLED=0
     main: ./notify
+    ldflags:
+      - -X github.com/dongfg/notify/notify/cmd.version={{.Version}}
     goos:
       - darwin
       - linux
