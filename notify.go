@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -173,8 +174,9 @@ type Notify struct {
 	agentID   int64
 	appSecret string
 
-	token          string
-	tokenExpiresAt int64
+	TokenPersist   bool
+	Token          string
+	TokenExpiresAt int64
 }
 
 type getTokenResult struct {
@@ -186,9 +188,11 @@ type getTokenResult struct {
 
 // New client，corpID 企业ID，在企业信息页面查看, agentID + appSecret 在应用页面查看
 func New(corpID string, agentID int64, appSecret string) *Notify {
-	return &Notify{
+	n := &Notify{
 		corpID: corpID, agentID: agentID, appSecret: appSecret,
 	}
+	_ = n.loadTokenCache()
+	return n
 }
 
 // Send message with options to receiver, options can be nil
@@ -291,14 +295,12 @@ func (n *Notify) Upload(media UploadMedia) (UploadMediaResult, error) {
 	}
 	_ = w.Close()
 	// get token
-	if time.Now().Unix() > n.tokenExpiresAt {
-		err := n.getToken()
-		if err != nil {
-			return result, err
-		}
+	err = n.getToken()
+	if err != nil {
+		return result, err
 	}
 	// send request
-	res, err := client.Post(fmt.Sprintf("%s/media/upload?access_token=%s&type=%s", apiPrefix, n.token, media.Type), w.FormDataContentType(), &b)
+	res, err := client.Post(fmt.Sprintf("%s/media/upload?access_token=%s&type=%s", apiPrefix, n.Token, media.Type), w.FormDataContentType(), &b)
 	if err != nil {
 		return result, fmt.Errorf("upload media file error: %w", err)
 	}
@@ -311,7 +313,15 @@ func (n *Notify) Upload(media UploadMedia) (UploadMediaResult, error) {
 	return result, nil
 }
 
+func (n *Notify) EnableTokenPersist() {
+	n.TokenPersist = true
+}
+
 func (n *Notify) getToken() error {
+	if n.Token != "" && time.Now().Unix() < n.TokenExpiresAt {
+		return nil
+	}
+
 	var client = &http.Client{Timeout: 10 * time.Second}
 
 	res, err := client.Get(fmt.Sprintf("%s/gettoken?corpid=%s&corpsecret=%s", apiPrefix, n.corpID, n.appSecret))
@@ -327,9 +337,50 @@ func (n *Notify) getToken() error {
 	if tokenRes.ErrorCode != 0 {
 		return fmt.Errorf("token get error: %s", tokenRes.ErrorMsg)
 	}
-	n.token = tokenRes.Token
-	n.tokenExpiresAt = time.Now().Unix() + tokenRes.ExpiresIn
+	n.Token = tokenRes.Token
+	n.TokenExpiresAt = time.Now().Unix() + tokenRes.ExpiresIn
+
+	_ = n.saveTokenCache()
+
 	return nil
+}
+
+func (n *Notify) loadTokenCache() error {
+	if !n.TokenPersist {
+		return fmt.Errorf("token persist not enabled")
+	}
+	b, err := ioutil.ReadFile(".notify")
+	if err != nil {
+		return err
+	}
+	var cache Notify
+	err = json.Unmarshal(b, &cache)
+	if err != nil {
+		return err
+	}
+	if time.Now().Unix() > cache.TokenExpiresAt {
+		return fmt.Errorf("token expired")
+	}
+	n.Token = cache.Token
+	n.TokenExpiresAt = cache.TokenExpiresAt
+	return nil
+}
+
+func (n *Notify) saveTokenCache() error {
+	if !n.TokenPersist {
+		return fmt.Errorf("token persist not enabled")
+	}
+	b, err := json.Marshal(n)
+	if err != nil {
+		return err
+	}
+	f, err := os.Create(".notify")
+	if err != nil {
+		return err
+	}
+	defer func() { _ = f.Close() }()
+	_, err = f.Write(b)
+	return err
 }
 
 func (n *Notify) sendMessage(msgBody map[string]interface{}) (MessageResult, error) {
@@ -341,7 +392,7 @@ func (n *Notify) sendMessage(msgBody map[string]interface{}) (MessageResult, err
 	if err != nil {
 		return result, fmt.Errorf("encode message error: %w", err)
 	}
-	res, err := client.Post(fmt.Sprintf("%s/message/send?access_token=%s", apiPrefix, n.token), "application/json", body)
+	res, err := client.Post(fmt.Sprintf("%s/message/send?access_token=%s", apiPrefix, n.Token), "application/json", body)
 	if err != nil {
 		return result, fmt.Errorf("send message request error: %w", err)
 	}
@@ -357,16 +408,16 @@ func (n *Notify) sendMessage(msgBody map[string]interface{}) (MessageResult, err
 func (n *Notify) sendInternal(msgBody map[string]interface{}) (MessageResult, error) {
 	var result MessageResult
 
-	if time.Now().Unix() > n.tokenExpiresAt {
-		err := n.getToken()
-		if err != nil {
-			return result, err
-		}
+	err := n.getToken()
+	if err != nil {
+		return result, err
 	}
 
-	result, err := n.sendMessage(msgBody)
-	if err == nil && result.ErrorCode != 0 {
-		// TODO check if error if token expire error, then retry once
+	result, err = n.sendMessage(msgBody)
+	// 42001 access_token 已过期
+	// 40014 不合法的access_token
+	if err == nil && (result.ErrorCode == 42001 || result.ErrorCode == 40014) {
+		// DONE check if error is token expire error, then retry once
 		err = n.getToken()
 		if err == nil {
 			result, err = n.sendMessage(msgBody)

@@ -178,6 +178,18 @@ func TestNotify_getToken(t *testing.T) {
 	})
 }
 
+func TestNotify_getTokenWithPersist(t *testing.T) {
+	n := newNotifyFromEnv()
+	n.EnableTokenPersist()
+
+	t.Run("ValidConfig", func(t *testing.T) {
+		err := n.getToken()
+		if err != nil {
+			t.Errorf("getToken() error = %v, want no error", err)
+		}
+	})
+}
+
 func TestNotify_Upload(t *testing.T) {
 	n := newNotifyFromEnv()
 	t.Run("Upload", func(t *testing.T) {

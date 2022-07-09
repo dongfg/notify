@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/dongfg/notify"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"os"
 )
 
 //  cfgFile global config file path
@@ -27,6 +28,7 @@ var rootCmd = &cobra.Command{
 	Long:  `企业微信应用消息发送`,
 	PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 		client = notify.New(corpID, agentID, appSecret)
+		client.EnableTokenPersist()
 		receiver = notify.MessageReceiver{
 			ToUser:  viper.GetString("user"),
 			ToParty: viper.GetString("party"),
@@ -55,7 +57,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.notify.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.notify.yaml or .notify.yaml)")
 
 	rootCmd.PersistentFlags().StringVarP(&corpID, "corpID", "", "", "企业ID，https://work.weixin.qq.com/wework_admin/frame#profile")
 	rootCmd.PersistentFlags().Int64VarP(&agentID, "agentID", "", 0, "应用agentID，应用页面查看")
@@ -139,7 +141,7 @@ func sendMessage(message interface{}) error {
 	if r.ErrorCode == 0 {
 		fmt.Println("发送成功")
 	} else {
-		fmt.Println(r.ErrorMsg)
+		fmt.Printf("[%d] %s\n", r.ErrorCode, r.ErrorMsg)
 	}
 	return nil
 }
