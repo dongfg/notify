@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"time"
 )
 
@@ -62,9 +63,17 @@ type MessageResult struct {
 	InvalidTag   string `json:"invalidtag"`
 }
 
+type MessageKey interface {
+	key() string
+}
+
 // Text 文本消息
 type Text struct {
 	Content string `json:"content"` // 消息内容，最长不超过2048个字节，超过将截断（支持id转译）
+}
+
+func (t Text) key() string {
+	return "text"
 }
 
 // Image 图片消息
@@ -72,9 +81,17 @@ type Image struct {
 	MediaID string `json:"media_id"` // 图片媒体文件id，可以调用上传临时素材接口获取
 }
 
+func (t Image) key() string {
+	return "image"
+}
+
 // Voice 语音消息
 type Voice struct {
 	MediaID string `json:"media_id"` // 语音文件id，可以调用上传临时素材接口获取
+}
+
+func (t Voice) key() string {
+	return "voice"
 }
 
 // Video 视频消息
@@ -84,9 +101,17 @@ type Video struct {
 	Description string `json:"description,omitempty"` // 非必填。视频消息的描述，不超过512个字节，超过会自动截断
 }
 
+func (t Video) key() string {
+	return "video"
+}
+
 // File 文件消息
 type File struct {
 	MediaID string `json:"media_id"` // 文件id，可以调用上传临时素材接口获取
+}
+
+func (t File) key() string {
+	return "file"
 }
 
 // TextCard 文本卡片消息
@@ -97,9 +122,17 @@ type TextCard struct {
 	BtnTxt      string `json:"btntxt,omitempty"` // 非必填。按钮文字。 默认为“详情”， 不超过4个文字，超过自动截断
 }
 
+func (t TextCard) key() string {
+	return "textcard"
+}
+
 // News 图文消息
 type News struct {
 	Articles []NewsArticle `json:"articles"` // 图文消息，一个图文消息支持1到8条图文
+}
+
+func (t News) key() string {
+	return "news"
 }
 
 // NewsArticle 图文消息详情
@@ -114,6 +147,10 @@ type NewsArticle struct {
 // 多次发送mpnews，会被认为是不同的图文，阅读、点赞的统计会被分开计算。
 type MpNews struct {
 	Articles []MpNewsArticle `json:"articles"` // 图文消息，一个图文消息支持1到8条图文
+}
+
+func (t MpNews) key() string {
+	return "mpnews"
 }
 
 // MpNewsArticle 图文消息详情详情
@@ -131,6 +168,10 @@ type Markdown struct {
 	Content string `json:"content"` // markdown内容，最长不超过2048个字节，必须是utf8编码
 }
 
+func (t Markdown) key() string {
+	return "markdown"
+}
+
 // MiniProgram 小程序通知消息。小程序通知消息只允许小程序应用发送，
 // 从2019年6月28日起，用户收到的小程序通知会出现在各个独立的小程序应用中。
 // 小程序应用仅支持发送小程序通知消息，暂不支持文本、图片、语音、视频、图文等其他类型的消息。
@@ -142,6 +183,10 @@ type MiniProgram struct {
 	Description       string                   `json:"description,omitempty"`         // 非必填。消息描述，长度限制4-12个汉字（支持id转译）
 	EmphasisFirstItem bool                     `json:"emphasis_first_item,omitempty"` // 非必填。是否放大第一个 content_item
 	ContentItems      []MiniProgramContentItem `json:"content_item,omitempty"`        // 非必填。消息内容键值对，最多允许10个item
+}
+
+func (t MiniProgram) key() string {
+	return "miniprogram_notice"
 }
 
 // MiniProgramContentItem 小程序通知消息内容键值
@@ -157,6 +202,10 @@ type TaskCard struct {
 	URL         string           `json:"url,omitempty"` // 非必填。点击后跳转的链接。最长2048字节，请确保包含了协议头(http/https)
 	TaskID      string           `json:"task_id"`       // 任务id，同一个应用发送的任务卡片消息的任务id不能重复，只能由数字、字母和“_-@.”组成，最长支持128字节
 	Buttons     []TaskCardButton `json:"btn"`           // 按钮列表，按钮个数为为1~2个
+}
+
+func (t TaskCard) key() string {
+	return "taskcard"
 }
 
 // TaskCardButton  任务卡片消息操作按钮
@@ -204,20 +253,28 @@ func (n *Notify) Send(receiver MessageReceiver, message interface{}, options *Me
 
 	msgBody := make(map[string]interface{})
 
-	if len(receiver.ToUser) > 0 {
-		msgBody["touser"] = receiver.ToUser
-	}
-	if len(receiver.ToParty) > 0 {
-		msgBody["toparty"] = receiver.ToParty
-	}
-	if len(receiver.ToTag) > 0 {
-		msgBody["totag"] = receiver.ToTag
-	}
-	if len(msgBody) == 0 {
+	if len(receiver.ToUser) == 0 && len(receiver.ToParty) == 0 && len(receiver.ToTag) == 0 {
 		return result, errors.New("message receiver not set, set at least one")
 	}
 
+	msgBody["touser"] = receiver.ToUser
+	msgBody["toparty"] = receiver.ToParty
+	msgBody["totag"] = receiver.ToTag
 	msgBody["agentid"] = n.agentID
+	setOptions(msgBody, options)
+
+	k, ok := message.(MessageKey)
+	if !ok {
+		return result, fmt.Errorf("unrecognized message type: %T", reflect.TypeOf(message))
+	}
+	msgBody["msgtype"] = k.key()
+	msgBody[k.key()] = message
+
+	return n.sendInternal(msgBody)
+}
+
+// setOptions for message
+func setOptions(msgBody map[string]interface{}, options *MessageOptions) {
 	if options != nil {
 		if options.Safe {
 			msgBody["safe"] = 1
@@ -232,45 +289,6 @@ func (n *Notify) Send(receiver MessageReceiver, message interface{}, options *Me
 			}
 		}
 	}
-
-	switch v := message.(type) {
-	case Text:
-		msgBody["msgtype"] = "text"
-		msgBody["text"] = v
-	case Image:
-		msgBody["msgtype"] = "image"
-		msgBody["image"] = v
-	case Voice:
-		msgBody["msgtype"] = "voice"
-		msgBody["voice"] = v
-	case Video:
-		msgBody["msgtype"] = "video"
-		msgBody["video"] = v
-	case File:
-		msgBody["msgtype"] = "file"
-		msgBody["file"] = v
-	case TextCard:
-		msgBody["msgtype"] = "textcard"
-		msgBody["textcard"] = v
-	case News:
-		msgBody["msgtype"] = "news"
-		msgBody["news"] = v
-	case MpNews:
-		msgBody["msgtype"] = "mpnews"
-		msgBody["mpnews"] = v
-	case Markdown:
-		msgBody["msgtype"] = "markdown"
-		msgBody["markdown"] = v
-	case MiniProgram:
-		msgBody["msgtype"] = "miniprogram_notice"
-		msgBody["miniprogram_notice"] = v
-	case TaskCard:
-		msgBody["msgtype"] = "taskcard"
-		msgBody["taskcard"] = v
-	default:
-		return result, fmt.Errorf("unrecognized message type: %T", v)
-	}
-	return n.sendInternal(msgBody)
 }
 
 // Upload temp media to server
