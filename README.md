@@ -41,7 +41,7 @@ func main() {
 从 [Release](https://github.com/dongfg/notify/releases) 页面下载二进制文件，或者通过 go 命令安装:
 
 ```shell script
-GO111MODULE="off" go get github.com/dongfg/notify/cmd/notify
+GO111MODULE="off" go install github.com/dongfg/notify/notify@latest
 ```
 
 全局参数：
