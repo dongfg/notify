@@ -48,7 +48,7 @@ GO111MODULE="off" go get github.com/dongfg/notify/cmd/notify
 
 ```text
 Flags:
-      --config string      config file (default is $HOME/.notify.yaml)
+      --config string      config file (default is $HOME/.notify.yaml or .notify.yaml)
       --corpID string      企业ID，https://work.weixin.qq.com/wework_admin/frame#profile
       --agentID int        应用agentID，应用页面查看
       --appSecret string   应用secret，应用页面查看
@@ -91,7 +91,7 @@ Available Commands:
   voice       发送语音消息
 
 Flags:
-      --config string      config file (default is $HOME/.notify.yaml)
+      --config string      config file (default is $HOME/.notify.yaml or .notify.yaml)
       --corpID string      企业ID，https://work.weixin.qq.com/wework_admin/frame#profile
       --agentID int        应用agentID，应用页面查看
       --appSecret string   应用secret，应用页面查看
@@ -156,5 +156,5 @@ notify textcard --title 恭喜你中奖了 --description 明天不用上班 --ur
 
 - [x] token 异常过期处理
 - [x] 命令行发送其他类型消息
-- [ ] 命令行 token 缓存
+- [x] 命令行 token 缓存
 - [x] 命令行 completion
