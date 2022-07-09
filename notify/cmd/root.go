@@ -29,7 +29,7 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "notify",
 	Short: "企业微信应用消息发送",
-	Long: fmt.Sprintf(`企业微信应用消息发送 - %s
+	Long: fmt.Sprintf(`企业微信应用消息发送 %s
 https://github.com/dongfg/notify`, version),
 	PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 		client = notify.New(corpID, agentID, appSecret)
