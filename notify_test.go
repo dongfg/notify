@@ -47,25 +47,25 @@ func TestNotify_Send(t *testing.T) {
 		},
 		{
 			name:    "Image",
-			args:    args{receiver: MessageReceiver{ToUser: "@all"}, message: Image{MediaID: "2lUfpG6A6TxyH7WJbtArKH3N40q5dF9tmV6Ib2e2tvCutkqEKGxrmExSbwSmLzv2Q"}, options: nil},
+			args:    args{receiver: MessageReceiver{ToUser: "@all"}, message: Image{MediaID: "3t2_WU_wEdRiMRM5ivmj9jQCkQtDayyHMKPMXx0UKMLpSgq4E2Ejj06YxBM0aYUGE"}, options: nil},
 			want:    MessageResult{ErrorCode: 0, ErrorMsg: "ok"},
 			wantErr: false,
 		},
 		{
 			name:    "Voice",
-			args:    args{receiver: MessageReceiver{ToUser: "@all"}, message: Voice{MediaID: "2yazpc6Y-vSYmF24KP8N9b1jZ5nD9wnvkOR0amyZWn5o"}, options: nil},
+			args:    args{receiver: MessageReceiver{ToUser: "@all"}, message: Voice{MediaID: "3rj6Q76DCcw2TFxuk0mzWVfCr4ew-XLZLk2Tr4XweDJ_oFXtAt6bhaiF5Ww1oR4tv"}, options: nil},
 			want:    MessageResult{ErrorCode: 0, ErrorMsg: "ok"},
 			wantErr: false,
 		},
 		{
 			name:    "Video",
-			args:    args{receiver: MessageReceiver{ToUser: "@all"}, message: Video{MediaID: "23NH1YLqekQ3FPAXN_uxn9A39MItpX2SEgZ7xmaKGyCc-pnqvOM62eH7zVJHZ9Xz2"}, options: nil},
+			args:    args{receiver: MessageReceiver{ToUser: "@all"}, message: Video{MediaID: "3EPW-UcNFojqsArToYnbQbeYUQteV7VLJdxUl4qYasx8rKGwqYNLyZOnUJmiR8Nd5"}, options: nil},
 			want:    MessageResult{ErrorCode: 0, ErrorMsg: "ok"},
 			wantErr: false,
 		},
 		{
 			name:    "File",
-			args:    args{receiver: MessageReceiver{ToUser: "@all"}, message: File{MediaID: "2WZTACgAdDh2NpUAs0hcPt6tsXBN1lZ7X2JELMxMO4k7auzDOsbOAAl6SO5y4kyh7"}, options: nil},
+			args:    args{receiver: MessageReceiver{ToUser: "@all"}, message: File{MediaID: "3t2_WU_wEdRiMRM5ivmj9jQCkQtDayyHMKPMXx0UKMLpSgq4E2Ejj06YxBM0aYUGE"}, options: nil},
 			want:    MessageResult{ErrorCode: 0, ErrorMsg: "ok"},
 			wantErr: false,
 		},
@@ -97,7 +97,7 @@ func TestNotify_Send(t *testing.T) {
 			args: args{receiver: MessageReceiver{ToUser: "@all"}, message: MpNews{Articles: []MpNewsArticle{
 				{
 					Title:            "中秋节礼品领取",
-					ThumbMediaID:     "2lUfpG6A6TxyH7WJbtArKH3N40q5dF9tmV6Ib2e2tvCutkqEKGxrmExSbwSmLzv2Q",
+					ThumbMediaID:     "3t2_WU_wEdRiMRM5ivmj9jQCkQtDayyHMKPMXx0UKMLpSgq4E2Ejj06YxBM0aYUGE",
 					Author:           "UnitTest",
 					ContentSourceURL: "https://work.weixin.qq.com/",
 					Content:          "今年中秋节公司有豪礼相送",
@@ -133,7 +133,7 @@ func TestNotify_Send(t *testing.T) {
 			args: args{receiver: MessageReceiver{ToUser: "@all"}, message: TaskCard{
 				Title:       "赵明登的礼物申请",
 				Description: "礼品：A31茶具套装<br>用途：赠与小黑科技张总经理",
-				TaskID:      "notify_" + strconv.Itoa(rand.Intn(99999)),
+				TaskID:      "notify_" + strconv.Itoa(rand.Intn(99999999)),
 				Buttons: []TaskCardButton{
 					{
 						Key:         "k1",
